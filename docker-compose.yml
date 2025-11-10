@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: flowbit_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    networks:
+      - flowbit-network
+
+  # Vanna AI Service
+  vanna-ai:
+    build: ./services/vanna
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@postgres:5432/flowbit_ai
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    networks:
+      - flowbit-network
+
+volumes:
+  postgres_data:
+
+networks:
+  flowbit-network:
+    driver: bridge

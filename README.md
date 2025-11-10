@@ -1,180 +1,263 @@
 
-  # FlowbitAI Analytics Dashboard
+  # FlowbitAI - Production-Ready Analytics Platform
 
-A production-grade full-stack analytics dashboard with AI-powered natural language querying capabilities.
+## 🚀 Overview
 
-## 🚀 Features
+FlowbitAI is a full-stack web application featuring a "Chat with Data" interface powered by Groq LLM for natural language SQL query generation. The platform provides comprehensive invoice analytics with real-time dashboard visualization.
 
-- **Interactive Analytics Dashboard** - Real-time business intelligence with charts and KPIs
-- **AI Chat with Data** - Natural language querying using Groq LLM
-- **Invoice Management** - Complete invoice processing and management system
-- **Document Management** - Upload, process, and analyze business documents
-- **Department Analytics** - Track spending and performance across departments
-- **User Management** - Role-based access control and user administration
-- **Real-time Data** - Live updates and responsive data visualization
+## 🏗️ Project Structure
 
-## 🏗️ Architecture
+```
+/FlowbitAI
+├── apps/
+│   ├── web/                 # Next.js Frontend (Vercel)
+│   └── api/                 # Express.js Backend API (Vercel)
+├── services/
+│   └── vanna/               # AI Service with Groq LLM (Render/Railway)
+├── data/
+│   └── Analytics_Test_Data.json  # Test dataset
+├── database/
+│   └── seed.sql             # PostgreSQL setup script
+├── docker-compose.yml       # Local development setup
+└── docs/                    # Documentation
+```
 
-- **Frontend**: Next.js 14 with TypeScript, TailwindCSS, shadcn/ui
-- **Backend**: Express.js with TypeScript, Prisma ORM
-- **Database**: PostgreSQL
-- **AI Server**: Python FastAPI with Groq LLM integration
-- **Authentication**: JWT-based auth system
+## 🔧 Quick Setup
 
-## 📋 Prerequisites
+### Prerequisites
+- Node.js 18+
+- Python 3.11+
+- PostgreSQL 15+
+- Git
 
-- Node.js 18+ 
-- Python 3.9+
-- PostgreSQL 14+
-- Groq API Key
+### Environment Variables
 
-## 🛠️ Installation
-
-### 1. Clone the repository
+**Frontend (.env.local)**
 ```bash
-git clone https://github.com/Mukul2956/flowbit-ai.git
+NEXT_PUBLIC_API_URL=https://flowbit-ai.vercel.app
+NEXT_PUBLIC_AI_SERVER_URL=https://your-vanna-ai-service.onrender.com
+```
+
+**Backend (.env)**
+```bash
+DATABASE_URL=postgresql://username:password@host:5432/flowbit_ai
+AI_SERVER_URL=https://your-vanna-ai-service.onrender.com
+PORT=3001
+```
+
+**AI Service (.env)**
+```bash
+DATABASE_URL=postgresql://username:password@host:5432/flowbit_ai
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.1-8b-instant
+PORT=8000
+ENVIRONMENT=production
+ALLOWED_ORIGINS=https://flowbit-ai.vercel.app,https://*.vercel.app
+```
+
+### Local Development Setup
+
+1. **Clone and Install**
+```bash
+git clone https://github.com/yourusername/flowbit-ai.git
 cd flowbit-ai
 ```
 
-### 2. Database Setup
+2. **Database Setup**
 ```bash
-# Create PostgreSQL database
-createdb flowbitai_analytics
+# Using Docker Compose (Recommended)
+docker-compose up postgres -d
 
-# Or using psql
-psql -U postgres -c "CREATE DATABASE flowbitai_analytics;"
+# Or manual PostgreSQL setup
+createdb flowbit_ai
+psql flowbit_ai < database/seed.sql
 ```
 
-### 3. Backend Setup
+3. **Frontend Setup**
 ```bash
-cd backend
+cd apps/web
 npm install
-cp .env.example .env
-# Edit .env with your database credentials
-npm run db:push
-npm run db:seed
+npm run dev
+# Runs on http://localhost:3000
 ```
 
-### 4. Frontend Setup
+4. **Backend API Setup**
 ```bash
-cd frontend
+cd apps/api
 npm install
 npm run build
+npm run dev
+# Runs on http://localhost:3001
 ```
 
-### 5. AI Server Setup
+5. **AI Service Setup**
 ```bash
-cd ai-server
+cd services/vanna
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your Groq API key and database credentials
+python main.py
+# Runs on http://localhost:8000
 ```
 
-## 🔧 Configuration
+## 🚀 Deployment
 
-### Backend (.env)
-```env
-DATABASE_URL="postgresql://username:password@localhost:5432/flowbitai_analytics"
-NODE_ENV="development"
-PORT=5000
-FRONTEND_URL="http://localhost:3000"
-JWT_SECRET="your-jwt-secret"
-```
+### Frontend & Backend (Vercel)
 
-### AI Server (.env)
-```env
-DATABASE_URL="postgresql://username:password@localhost:5432/flowbitai_analytics"
-GROQ_API_KEY="your-groq-api-key"
-GROQ_MODEL="llama-3.1-8b-instant"
-PORT=8000
-```
+1. **Connect GitHub Repository**
+   - Link your GitHub repo to Vercel
+   - Deploy frontend from `apps/web` folder
+   - Deploy backend from `apps/api` folder
 
-## 🚀 Running the Application
+2. **Environment Configuration**
+   - Set production environment variables in Vercel dashboard
+   - Configure domain settings for CORS
 
-### Development Mode
+### AI Service (Render/Railway/Fly.io)
+
+1. **Dockerfile Deployment**
 ```bash
-# Terminal 1: Backend
-cd backend && npm run dev
-
-# Terminal 2: Frontend  
-cd frontend && npm run dev
-
-# Terminal 3: AI Server
-cd ai-server && python main.py
+# Using the provided Dockerfile in services/vanna/
+docker build -t flowbit-ai-service .
+docker run -p 8000:8000 flowbit-ai-service
 ```
 
-### Production Mode
-```bash
-# Build and start backend
-cd backend && npm run build && npm start
+2. **Environment Variables**
+   - Set all required environment variables
+   - Ensure DATABASE_URL points to production database
+   - Configure ALLOWED_ORIGINS for your Vercel domain
 
-# Build and start frontend
-cd frontend && npm run build && npm start
+### Production URLs
 
-# Start AI server
-cd ai-server && python main.py
+- **Frontend**: `https://flowbit-ai.vercel.app`
+- **Backend API**: `https://flowbit-ai.vercel.app/api`
+- **AI Service**: `https://your-service-name.onrender.com`
+
+## � Database Schema
+
+### Tables Structure
+
+```sql
+-- Categories
+id (SERIAL PRIMARY KEY)
+name (VARCHAR)
+description (TEXT)
+
+-- Vendors  
+id (SERIAL PRIMARY KEY)
+name (VARCHAR)
+email (VARCHAR)
+phone (VARCHAR)
+address (TEXT)
+
+-- Invoices
+id (SERIAL PRIMARY KEY)
+invoiceId (VARCHAR)
+vendorId (INTEGER FK)
+categoryId (INTEGER FK)  
+totalAmount (DECIMAL)
+issueDate (DATE)
+dueDate (DATE)
+paymentDate (DATE)
+status (VARCHAR)
+description (TEXT)
 ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- AI Server: http://localhost:8000
+## 🔌 API Documentation
 
-## 📊 Data Ingestion
+### Base URL
+- **Development**: `http://localhost:3001/api`
+- **Production**: `https://flowbit-ai.vercel.app/api`
 
-To populate the dashboard with sample data:
+### Endpoints
 
-```bash
-cd backend
-npm run ingest-data data/Analytics_Test_Data.json
-npm run add-realistic-amounts
+#### Analytics Routes
+
+**GET /api/analytics/summary**
+```json
+{
+  "total_amount": "€115,670.38",
+  "paid_invoices": 39,
+  "pending_invoices": 11,
+  "total_invoices": 50
+}
 ```
 
-## 🤖 AI Chat Features
+**GET /api/analytics/category-spend**
+```json
+[
+  { "name": "General", "value": 111000.50 },
+  { "name": "Document", "value": 4669.88 }
+]
+```
 
-The AI chat can answer questions like:
-- "How many invoices do we have?"
-- "What's our total spend this month?"
-- "Show me the top 5 vendors by spending"
-- "How many overdue invoices are there?"
+**GET /api/analytics/vendor-spend**
+```json
+[
+  { "name": "TechCorp Solutions", "value": 15250.00 },
+  { "name": "Global Services GmbH", "value": 12890.00 }
+]
+```
 
-## 🔄 API Endpoints
+#### Chat Routes
 
-### Analytics
-- `GET /api/analytics/stats` - Dashboard statistics
-- `GET /api/analytics/trends` - Spending trends
-- `GET /api/analytics/departments` - Department analytics
+**POST /api/chat**
+```json
+// Request
+{
+  "question": "What is our total spending this year?",
+  "context": {}
+}
 
-### Invoices
-- `GET /api/invoices` - List invoices with pagination
-- `POST /api/invoices` - Create new invoice
-- `PUT /api/invoices/:id` - Update invoice
+// Response
+{
+  "query": "SELECT SUM(totalAmount) FROM invoices WHERE EXTRACT(YEAR FROM issueDate) = 2024",
+  "result": [{ "sum": "115670.38" }],
+  "explanation": "Total spending for 2024 is €115,670.38"
+}
+```
 
-### Documents
-- `GET /api/documents` - List documents
-- `POST /api/documents/upload` - Upload documents
+## 🤖 "Chat with Data" Workflow
 
-## 🛡️ Security
+1. **User Input**: Natural language question via chat interface
+2. **Frontend Processing**: Validates input and sends to backend API
+3. **API Proxy**: Routes request to Vanna AI service
+4. **SQL Generation**: Groq LLM converts natural language to SQL
+5. **Database Query**: Executes generated SQL on PostgreSQL
+6. **Result Processing**: Formats data for visualization
+7. **Frontend Display**: Updates charts and displays results
 
-- JWT-based authentication
-- Password hashing with bcrypt
-- CORS protection
-- Rate limiting
-- Input validation
+## 🧪 Testing Queries
 
-## 📝 License
+### Financial Analytics
+- "What is our total spending this year?"
+- "How many invoices have been paid vs pending?"
+- "What is the average invoice value for paid vs pending invoices?"
 
-This project is licensed under the MIT License.
+### Vendor Analytics  
+- "Which vendors have the highest average invoice amounts?"
+- "List vendors with more than 5 invoices in the last 6 months"
+- "What is the total spend per vendor for the last quarter?"
 
-## 🤝 Contributing
+### Business Intelligence
+- "Compare spending between General and Document categories"
+- "What is the month-over-month growth in invoice volume?"
+- "Show me the median invoice amount by vendor category"
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+## � Security & Performance
 
-## 📧 Support
+### Security Features
+- CORS configuration for Vercel domains
+- Rate limiting and input validation
+- Parameterized queries to prevent SQL injection
 
-For support, email support@flowbitai.com or create an issue on GitHub.
+### Performance Optimizations
+- Next.js optimized builds with code splitting
+- Database connection pooling
+- Response caching for analytics endpoints
+
+---
+
+## � Quick Links
+
+- **GitHub Repo**: https://github.com/yourusername/flowbit-ai
+- **Test Queries**: See TestQueries.txt for comprehensive testing examples
   
