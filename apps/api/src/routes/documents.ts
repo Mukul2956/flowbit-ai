@@ -96,9 +96,9 @@ router.post('/upload', upload.single('document'), async (req: Request, res: Resp
         fileName: req.file.originalname,
         filePath: req.file.path,
         fileSize: req.file.size,
-        fileType: path.extname(req.file.originalname).toLowerCase(),
-        uploadedAt: new Date(),
-        processingStatus: 'UPLOADED'
+        mimeType: req.file.mimetype || 'application/octet-stream',
+        type: 'INVOICE' as any,
+        uploadedAt: new Date()
       }
     });
 

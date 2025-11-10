@@ -3,19 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend"
+    "apps/web",
+    "apps/api"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run dev --workspace=backend",
-    "dev:ai": "cd ai-server && python main.py",
-    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
-    "build:frontend": "npm run build --workspace=frontend",
-    "build:backend": "npm run build --workspace=backend",
-    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend",
-    "db:setup": "npm run db:generate --workspace=backend && npm run db:migrate --workspace=backend && npm run db:seed --workspace=backend",
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:ai": "cd services/vanna && python main.py",
+    "build": "npm run build --workspace=apps/web && npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:api": "npm run build --workspace=apps/api",
+    "install:all": "npm install && npm install --workspace=apps/web && npm install --workspace=apps/api",
+    "db:setup": "npm run db:generate --workspace=apps/api && npm run db:migrate --workspace=apps/api && npm run db:seed --workspace=apps/api",
     "setup": "npm run install:all && npm run db:setup"
   },
   "devDependencies": {
