@@ -1,0 +1,28 @@
+# FlowbitAI Test Queries
+
+## LEVEL 1: Financial Analytics
+1. What is our total spending this year?
+2. How many invoices have been paid vs pending?
+3. What is the average invoice value for paid vs pending invoices?
+4. Show me the total spending by category.
+
+## LEVEL 2: Advanced Vendor Analytics
+5. Which vendors have the highest average invoice amounts and how many invoices did they send?
+6. List vendors with more than 5 invoices in the last 6 months.
+7. What is the total spend per vendor for the last quarter?
+
+## LEVEL 3: Complex Business Intelligence
+8. Compare spending between General and Document categories for the last year.
+9. What is the month-over-month growth in invoice volume?
+
+## LEVEL 4: Advanced SQL Challenges
+10. Rank our vendors by total spending and show each vendor's percentage of total spend.
+11. What is the spending difference between Q3 and Q4 2024 by category?
+12. Show me the median invoice amount by vendor category for paid invoices.
+13. Find all vendors who have both high-value invoices (>€2000) and low-value invoices (<€500).
+14. Which vendor has shown the most consistent invoice frequency over the last 6 months?
+
+## LEVEL 5: Business Intelligence Edge Cases
+15. What is our invoice processing efficiency? Show average days from issue date to payment.
+16. Identify any unusual spending patterns or invoice amounts that might need review.
+17. Based on current spending trends, what will be our projected monthly spend for next quarter?

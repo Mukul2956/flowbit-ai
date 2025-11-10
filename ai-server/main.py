@@ -88,34 +88,39 @@ class DatabaseSchema:
         
         3. invoices table:
         - id: string (primary key)
-        - invoice_number: string (unique invoice number)
-        - vendor_id: string (foreign key to vendors)
-        - customer_id: string (foreign key to customers, optional)
-        - issue_date: timestamp (when invoice was issued)
-        - due_date: timestamp (when payment is due)
-        - paid_date: timestamp (when invoice was paid, null if unpaid)
+        - "invoiceNumber": string (unique invoice number) 
+        - "vendorId": string (foreign key to vendors)
+        - "customerId": string (foreign key to customers, optional)
+        - "issueDate": timestamp (when invoice was issued)
+        - "dueDate": timestamp (when payment is due)
+        - "paidDate": timestamp (when invoice was paid, null if unpaid)
         - subtotal: decimal (invoice subtotal)
-        - tax_amount: decimal (tax amount)
-        - total_amount: decimal (total invoice amount)
+        - "taxAmount": decimal (tax amount)
+        - "totalAmount": decimal (total invoice amount)
         - currency: string (default EUR)
         - status: enum (PENDING, PAID, OVERDUE, CANCELLED, DRAFT)
         - category: string (invoice category)
         
         4. line_items table:
         - id: string (primary key)
-        - invoice_id: string (foreign key to invoices)
+        - "invoiceId": string (foreign key to invoices)
         - description: string (item description)
         - quantity: decimal
-        - unit_price: decimal
-        - total_price: decimal
+        - "unitPrice": decimal
+        - "totalPrice": decimal
         - category: string
         
         5. payments table:
         - id: string (primary key)
-        - invoice_id: string (foreign key to invoices)
+        - "invoiceId": string (foreign key to invoices)
         - amount: decimal (payment amount)
         - method: enum (BANK_TRANSFER, CREDIT_CARD, PAYPAL, CASH, CHECK, OTHER)
-        - paid_date: timestamp
+        - "paidDate": timestamp
+        
+        IMPORTANT: Use double quotes around camelCase column names in SQL queries!
+        Examples:
+        - SELECT SUM("totalAmount") FROM invoices WHERE status = 'PAID'
+        - SELECT v.name, SUM(i."totalAmount") FROM vendors v JOIN invoices i ON v.id = i."vendorId"
         
         Common queries:
         - Total spend: SUM(total_amount) FROM invoices WHERE status = 'PAID'
@@ -183,18 +188,23 @@ def generate_sql_with_groq(question: str) -> str:
         
         {schema_info}
         
-        Rules:
+        CRITICAL RULES:
         1. Return ONLY the SQL query, no explanations or markdown
         2. Use proper PostgreSQL syntax
         3. Always use table aliases for clarity
-        4. For date ranges, use appropriate date functions
+        4. ALWAYS use double quotes around camelCase column names
         5. For aggregations, include proper GROUP BY clauses
         6. Use LIMIT clauses for large result sets (default LIMIT 100)
-        7. Always use proper field names as defined in the schema
         
-        Examples:
-        - "total spend this year" → SELECT SUM(total_amount) FROM invoices WHERE status = 'PAID' AND issue_date >= DATE_TRUNC('year', CURRENT_DATE)
-        - "top 5 vendors" → SELECT v.name, SUM(i.total_amount) as total_spend FROM vendors v JOIN invoices i ON v.id = i.vendor_id WHERE i.status = 'PAID' GROUP BY v.id, v.name ORDER BY total_spend DESC LIMIT 5
+        CORRECT COLUMN EXAMPLES:
+        - "totalAmount" NOT total_amount
+        - "vendorId" NOT vendor_id  
+        - "issueDate" NOT issue_date
+        
+        CORRECT SQL EXAMPLES:
+        - "total spend" → SELECT SUM("totalAmount") FROM invoices WHERE status = 'PAID'
+        - "spending by category" → SELECT category, SUM("totalAmount") as total_spend FROM invoices WHERE status = 'PAID' GROUP BY category ORDER BY total_spend DESC
+        - "top vendors" → SELECT v.name, SUM(i."totalAmount") as total_spend FROM vendors v JOIN invoices i ON v.id = i."vendorId" WHERE i.status = 'PAID' GROUP BY v.id, v.name ORDER BY total_spend DESC LIMIT 5
         """
         
         response = groq_client.chat.completions.create(

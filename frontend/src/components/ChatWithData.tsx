@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Database, Table as TableIcon } from 'lucide-react';
+import { chatApi } from '@/lib/api';
 
 interface Message {
   id: string;
@@ -8,32 +9,8 @@ interface Message {
   sql?: string;
   results?: any[];
   timestamp: Date;
+  error?: string;
 }
-
-// Mock responses - replace with actual API call to /chat-with-data
-const mockResponses: Record<string, { sql: string; results: any[] }> = {
-  'total spend': {
-    sql: 'SELECT SUM(amount) as total_spend FROM invoices WHERE date >= CURRENT_DATE - INTERVAL \'90 days\'',
-    results: [{ total_spend: 64748.81 }],
-  },
-  'top 5 vendors': {
-    sql: 'SELECT vendor, SUM(amount) as total_spend FROM invoices GROUP BY vendor ORDER BY total_spend DESC LIMIT 5',
-    results: [
-      { vendor: 'OmegaLtd', total_spend: 15000.00 },
-      { vendor: 'Test Solution', total_spend: 12300.00 },
-      { vendor: 'Global Supply', total_spend: 8679.25 },
-      { vendor: 'Infomedics', total_spend: 6200.00 },
-      { vendor: 'DataServices', total_spend: 13000.00 },
-    ],
-  },
-  'overdue': {
-    sql: 'SELECT id, vendor, date, amount FROM invoices WHERE status = \'Overdue\' AND date < CURRENT_DATE',
-    results: [
-      { id: 'INV-004', vendor: 'Infomedics', date: '2025-10-22', amount: 6200.00 },
-      { id: 'INV-010', vendor: 'Test Solution', date: '2025-11-07', amount: 3800.00 },
-    ],
-  },
-};
 
 export function ChatWithData() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -49,13 +26,14 @@ export function ChatWithData() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue,
+      content: inputValue.trim(),
       timestamp: new Date(),
     };
 
@@ -63,40 +41,42 @@ export function ChatWithData() {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate API call to /chat-with-data
-    setTimeout(() => {
-      // Find matching mock response
-      let response = null;
-      const query = inputValue.toLowerCase();
+    try {
+      // Call the real AI API instead of using mock data
+      const response = await chatApi.sendMessage(inputValue.trim());
       
-      if (query.includes('total spend') || query.includes('90 days')) {
-        response = mockResponses['total spend'];
-      } else if (query.includes('top') && query.includes('vendor')) {
-        response = mockResponses['top 5 vendors'];
-      } else if (query.includes('overdue')) {
-        response = mockResponses['overdue'];
-      }
-
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response 
-          ? 'I\'ve executed your query and found the following results:'
-          : 'I couldn\'t find specific data for that query. Please try asking about total spend, top vendors, or overdue invoices.',
-        sql: response?.sql,
-        results: response?.results,
+        content: response.error 
+          ? `Sorry, I encountered an error: ${response.error}`
+          : response.explanation || 'I\'ve executed your query and found the following results:',
+        sql: response.sql,
+        results: response.data || [],
+        error: response.error,
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, I\'m having trouble connecting to the analytics server. Please make sure the backend is running.',
+        error: 'Connection failed',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSubmit(e);
     }
   };
 
@@ -240,7 +220,7 @@ export function ChatWithData() {
             disabled={isLoading}
           />
           <button
-            onClick={handleSendMessage}
+            onClick={(e) => handleSubmit(e)}
             disabled={!inputValue.trim() || isLoading}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
