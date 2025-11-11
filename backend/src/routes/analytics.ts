@@ -180,7 +180,9 @@ router.get('/cash-outflow', async (req: Request, res: Response) => {
 // Get department analytics
 router.get('/departments', async (req: Request, res: Response) => {
   try {
-    // Since all invoices have "General" category, create meaningful departments
+    console.log('Fetching department analytics...');
+    
+    // Get all invoices for department distribution
     const allInvoices = await prisma.invoice.findMany({
       select: {
         id: true,
@@ -188,6 +190,8 @@ router.get('/departments', async (req: Request, res: Response) => {
         invoiceNumber: true
       }
     });
+
+    console.log(`Found ${allInvoices.length} invoices for department analysis`);
 
     // Create department mapping based on invoice distribution
     const departments: { name: string; invoices: any[] }[] = [
@@ -223,10 +227,14 @@ router.get('/departments', async (req: Request, res: Response) => {
       };
     });
 
+    console.log('Department analytics calculated:', departmentAnalytics.length, 'departments');
     res.json(departmentAnalytics);
   } catch (error) {
     console.error('Error fetching departments:', error);
-    res.status(500).json({ error: 'Failed to fetch department analytics' });
+    res.status(500).json({ 
+      error: 'Failed to fetch department analytics',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
