@@ -1,0 +1,7 @@
+{
+  "env": {
+    "NEXT_PUBLIC_API_BASE": "https://flowbit-ai-back.vercel.app/api",
+    "NEXT_PUBLIC_APP_URL": "https://flowbit-ai-frontend.vercel.app",
+    "NODE_ENV": "production"
+  }
+}
