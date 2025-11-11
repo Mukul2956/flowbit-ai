@@ -8,7 +8,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import asyncpg
+import psycopg
 from dotenv import load_dotenv
 
 try:
@@ -128,8 +128,8 @@ class DatabaseSchema:
         - Monthly trends: GROUP BY EXTRACT(YEAR FROM issue_date), EXTRACT(MONTH FROM issue_date)
         """
 
-async def get_db_connection():
-    """Create database connection using asyncpg"""
+def get_db_connection():
+    """Create database connection using psycopg3"""
     try:
         if not DATABASE_URL:
             raise ValueError("DATABASE_URL not configured")
@@ -137,25 +137,30 @@ async def get_db_connection():
         # Convert from postgres:// to postgresql:// if needed
         db_url = DATABASE_URL.replace("postgresql+psycopg://", "postgresql://")
         
-        conn = await asyncpg.connect(db_url)
+        conn = psycopg.connect(db_url)
         return conn
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
         raise HTTPException(status_code=500, detail="Database connection failed")
 
-async def execute_sql_query(sql: str) -> List[Dict[str, Any]]:
+def execute_sql_query(sql: str) -> List[Dict[str, Any]]:
     """Execute SQL query and return results"""
     conn = None
     try:
-        conn = await get_db_connection()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
         # Execute query
         if sql.strip().upper().startswith('SELECT'):
-            results = await conn.fetch(sql)
-            # Convert asyncpg Record objects to dictionaries
-            return [dict(row) for row in results]
+            cursor.execute(sql)
+            results = cursor.fetchall()
+            # Get column names
+            columns = [desc[0] for desc in cursor.description]
+            # Convert to list of dictionaries
+            return [dict(zip(columns, row)) for row in results]
         else:
-            await conn.execute(sql)
+            cursor.execute(sql)
+            conn.commit()
             return [{"message": "Query executed successfully"}]
             
     except Exception as e:
@@ -163,7 +168,7 @@ async def execute_sql_query(sql: str) -> List[Dict[str, Any]]:
         raise Exception(f"SQL execution failed: {str(e)}")
     finally:
         if conn:
-            await conn.close()
+            conn.close()
 
 def generate_sql_with_groq(question: str) -> str:
     """Generate SQL using Groq LLM"""
@@ -279,7 +284,7 @@ async def chat_with_data(request: ChatRequest) -> ChatResponse:
         logger.info(f"Generated SQL: {sql}")
         
         # Execute SQL query
-        data = await execute_sql_query(sql)
+        data = execute_sql_query(sql)
         logger.info(f"Query returned {len(data)} rows")
         
         # Generate chart configuration
@@ -326,8 +331,8 @@ async def health_check():
     
     # Test database connection
     try:
-        conn = await get_db_connection()
-        await conn.close()
+        conn = get_db_connection()
+        conn.close()
         health_status["checks"]["database"] = True
     except Exception as e:
         health_status["checks"]["database"] = False
