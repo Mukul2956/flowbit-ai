@@ -8,64 +8,56 @@ const prisma = new PrismaClient();
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     console.log('Analytics stats request received');
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
     
-    // Test database connection first
-    const invoiceCount = await prisma.invoice.count();
-    console.log('Total invoices in database:', invoiceCount);
-    
-    const [
-      totalSpendResult,
-      totalInvoices,
-      totalDocuments,
-      avgInvoiceResult,
-    ] = await Promise.all([
-      // Total spend (including both PAID and PENDING)
-      prisma.invoice.aggregate({
-        where: {
-          status: {
-            in: ['PAID', 'PENDING']
-          }
-        },
-        _sum: {
-          totalAmount: true
-        }
-      }).catch(() => ({ _sum: { totalAmount: 0 } })),
-      
-      // Total invoices processed
-      prisma.invoice.count({
-        where: {
-          status: {
-            in: ['PAID', 'PENDING']
-          }
-        }
-      }).catch(() => 0),
-      
-      // Documents uploaded (with fallback if table is empty)
-      prisma.document.count().catch(() => 0),
-      
-      // Average invoice value
-      prisma.invoice.aggregate({
-        _avg: {
-          totalAmount: true
-        }
-      }).catch(() => ({ _avg: { totalAmount: 0 } }))
-    ]);
+    // Test simple database connection first
+    let invoiceCount = 0;
+    try {
+      invoiceCount = await prisma.invoice.count();
+      console.log('Total invoices in database:', invoiceCount);
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed',
+        details: String(dbError)
+      });
+    }
 
-    const stats = {
-      totalSpend: Number(totalSpendResult._sum.totalAmount || 0),
-      totalInvoices: totalInvoices,
-      totalDocuments: totalDocuments,
-      avgInvoiceValue: Number(avgInvoiceResult._avg.totalAmount || 0),
-      // Add some mock metrics for display
+    // If we reach here, database is connected, let's get simple stats
+    let stats = {
+      totalInvoices: invoiceCount,
+      totalSpend: 0,
+      avgInvoiceValue: 0,
+      totalDocuments: 0,
       outstandingAmount: 0,
       overdueInvoices: 0
     };
+
+    try {
+      // Try to get total spend
+      const spendResult = await prisma.invoice.aggregate({
+        _sum: { totalAmount: true }
+      });
+      stats.totalSpend = Number(spendResult._sum.totalAmount || 0);
+      
+      // Try to get average
+      const avgResult = await prisma.invoice.aggregate({
+        _avg: { totalAmount: true }
+      });
+      stats.avgInvoiceValue = Number(avgResult._avg.totalAmount || 0);
+    } catch (aggError) {
+      console.error('Aggregation error:', aggError);
+      // Continue with basic stats
+    }
 
     console.log('Analytics stats result:', stats);
     res.json(stats);
   } catch (error) {
     console.error('Error fetching stats:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    res.status(500).json({ 
+      error: 'Failed to fetch statistics',
+      details: String(error)
+    });
   }
 });
 
