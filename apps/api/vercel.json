@@ -6,7 +6,7 @@
   },
   "env": {
     "DATABASE_URL": "@database_url",
-    "AI_SERVER_URL": "https://your-vanna-ai-service.onrender.com"
+    "AI_SERVER_URL": "https://flowbit-ai-service.onrender.com"
   },
   "headers": [
     {
