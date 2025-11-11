@@ -1,13 +1,12 @@
 import os
 import logging
 import traceback
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import psycopg
 from dotenv import load_dotenv
 
@@ -52,17 +51,29 @@ groq_client = None
 if GROQ_API_KEY:
     groq_client = Groq(api_key=GROQ_API_KEY)
 
-class ChatRequest(BaseModel):
-    question: str
-    context: Optional[Dict] = {}
+# Type definitions for request/response (no Pydantic needed)
+def validate_chat_request(data: dict) -> dict:
+    """Validate chat request data"""
+    if not isinstance(data, dict):
+        raise ValueError("Request must be a JSON object")
+    if "question" not in data or not isinstance(data["question"], str):
+        raise ValueError("Missing or invalid 'question' field")
+    return {
+        "question": data["question"].strip(),
+        "context": data.get("context", {})
+    }
 
-class ChatResponse(BaseModel):
-    question: str
-    sql: Optional[str] = None
-    data: Optional[List[Dict]] = None
-    chart_config: Optional[Dict] = None
-    error: Optional[str] = None
-    explanation: Optional[str] = None
+def create_chat_response(question: str, sql: str = None, data: List[Dict] = None, 
+                        chart_config: Dict = None, error: str = None, explanation: str = None) -> dict:
+    """Create chat response dictionary"""
+    return {
+        "question": question,
+        "sql": sql,
+        "data": data,
+        "chart_config": chart_config,
+        "error": error,
+        "explanation": explanation
+    }
 
 class DatabaseSchema:
     """Database schema information for context"""
@@ -269,11 +280,14 @@ async def root():
         "database_configured": DATABASE_URL is not None
     }
 
-@app.post("/chat", response_model=ChatResponse)
-async def chat_with_data(request: ChatRequest) -> ChatResponse:
+@app.post("/chat")
+async def chat_with_data(request: dict) -> dict:
     """Process natural language questions and return SQL + data"""
     try:
-        question = request.question.strip()
+        # Validate request
+        validated_request = validate_chat_request(request)
+        question = validated_request["question"]
+        
         if not question:
             raise HTTPException(status_code=400, detail="Question cannot be empty")
         
@@ -293,7 +307,7 @@ async def chat_with_data(request: ChatRequest) -> ChatResponse:
         # Generate explanation
         explanation = f"Generated SQL query based on your question about {question.lower()}. Found {len(data)} result(s)."
         
-        return ChatResponse(
+        return create_chat_response(
             question=question,
             sql=sql,
             data=data,
@@ -301,10 +315,12 @@ async def chat_with_data(request: ChatRequest) -> ChatResponse:
             explanation=explanation
         )
         
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Chat processing error: {traceback.format_exc()}")
-        return ChatResponse(
-            question=request.question,
+        return create_chat_response(
+            question=request.get("question", "") if isinstance(request, dict) else "",
             error=str(e)
         )
 
