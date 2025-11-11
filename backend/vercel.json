@@ -4,10 +4,6 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "AI_SERVER_URL": "https://flowbit-ai-service.onrender.com"
-  },
   "headers": [
     {
       "source": "/(.*)",
