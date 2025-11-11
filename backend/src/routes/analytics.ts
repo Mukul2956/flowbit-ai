@@ -182,51 +182,58 @@ router.get('/departments', async (req: Request, res: Response) => {
   try {
     console.log('Fetching department analytics...');
     
-    // Use raw SQL instead of Prisma due to schema mismatch
-    const allInvoices = await prisma.$queryRaw`
-      SELECT id, "invoiceId" as invoice_number, "totalAmount" as total_amount 
-      FROM invoices 
-      ORDER BY id
-    `;
+    // Use a fresh Prisma client to avoid prepared statement conflicts in serverless
+    const freshPrisma = new PrismaClient();
+    
+    try {
+      // Use raw SQL instead of Prisma due to schema mismatch
+      const allInvoices = await freshPrisma.$queryRaw`
+        SELECT id, "invoiceId" as invoice_number, "totalAmount" as total_amount 
+        FROM invoices 
+        ORDER BY id
+      `;
 
-    console.log(`Found ${(allInvoices as any[]).length} invoices for department analysis`);
+      console.log(`Found ${(allInvoices as any[]).length} invoices for department analysis`);
 
-    // Create department mapping based on invoice distribution
-    const departments: { name: string; invoices: any[] }[] = [
-      { name: 'IT', invoices: [] },
-      { name: 'Finance', invoices: [] },
-      { name: 'Operations', invoices: [] },
-      { name: 'Marketing', invoices: [] },
-      { name: 'HR', invoices: [] }
-    ];
+      // Create department mapping based on invoice distribution
+      const departments: { name: string; invoices: any[] }[] = [
+        { name: 'IT', invoices: [] },
+        { name: 'Finance', invoices: [] },
+        { name: 'Operations', invoices: [] },
+        { name: 'Marketing', invoices: [] },
+        { name: 'HR', invoices: [] }
+      ];
 
-    // Distribute invoices across departments
-    (allInvoices as any[]).forEach((invoice: any, index: number) => {
-      const deptIndex = index % departments.length;
-      departments[deptIndex].invoices.push(invoice);
-    });
+      // Distribute invoices across departments
+      (allInvoices as any[]).forEach((invoice: any, index: number) => {
+        const deptIndex = index % departments.length;
+        departments[deptIndex].invoices.push(invoice);
+      });
 
-    // Calculate department analytics
-    const departmentAnalytics = departments.map((dept: any) => {
-      const totalSpend = dept.invoices.reduce((sum: number, inv: any) => 
-        sum + Number(inv.total_amount), 0);
-      const invoiceCount = dept.invoices.length;
-      const avgInvoiceValue = invoiceCount > 0 ? totalSpend / invoiceCount : 0;
-      const budgetAllocated = totalSpend * 1.3;
-      const budgetUtilized = budgetAllocated > 0 ? (totalSpend / budgetAllocated) * 100 : 0;
+      // Calculate department analytics
+      const departmentAnalytics = departments.map((dept: any) => {
+        const totalSpend = dept.invoices.reduce((sum: number, inv: any) => 
+          sum + Number(inv.total_amount), 0);
+        const invoiceCount = dept.invoices.length;
+        const avgInvoiceValue = invoiceCount > 0 ? totalSpend / invoiceCount : 0;
+        const budgetAllocated = totalSpend * 1.3;
+        const budgetUtilized = budgetAllocated > 0 ? (totalSpend / budgetAllocated) * 100 : 0;
 
-      return {
-        department: dept.name,
-        total_spend: totalSpend,
-        invoice_count: invoiceCount,
-        avg_invoice_value: avgInvoiceValue,
-        budget_allocated: budgetAllocated,
-        budget_utilized: budgetUtilized
-      };
-    });
+        return {
+          department: dept.name,
+          total_spend: totalSpend,
+          invoice_count: invoiceCount,
+          avg_invoice_value: avgInvoiceValue,
+          budget_allocated: budgetAllocated,
+          budget_utilized: budgetUtilized
+        };
+      });
 
-    console.log('Department analytics calculated:', departmentAnalytics.length, 'departments');
-    res.json(departmentAnalytics);
+      console.log('Department analytics calculated:', departmentAnalytics.length, 'departments');
+      res.json(departmentAnalytics);
+    } finally {
+      await freshPrisma.$disconnect();
+    }
   } catch (error) {
     console.error('Error fetching departments:', error);
     res.status(500).json({ 
