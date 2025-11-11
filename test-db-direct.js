@@ -1,5 +1,45 @@
 const { Client } = require('pg');
 
+// Check the actual structure of the invoices table
+const checkInvoicesStructure = async () => {
+  const connectionString = 'postgresql://postgres.ogohcxuwjtfpwnxejpey:mukul%40237lassi@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres';
+  
+  const client = new Client({
+    connectionString: connectionString
+  });
+
+  try {
+    await client.connect();
+    console.log('✅ Connected to database');
+    
+    // Check column names in invoices table
+    const columnResult = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'invoices' 
+      AND table_schema = 'public'
+      ORDER BY ordinal_position
+    `);
+    
+    console.log('\n📋 Columns in invoices table:');
+    columnResult.rows.forEach(row => console.log(`  - ${row.column_name}: ${row.data_type}`));
+    
+    // Try to get a sample invoice to see the actual data
+    const sampleResult = await client.query('SELECT * FROM invoices LIMIT 1');
+    if (sampleResult.rows.length > 0) {
+      console.log('\n📄 Sample invoice:');
+      console.log(JSON.stringify(sampleResult.rows[0], null, 2));
+    }
+    
+  } catch (error) {
+    console.error('❌ Database operation failed:', error.message);
+  } finally {
+    await client.end().catch(() => {});
+  }
+};
+
+checkInvoicesStructure();
+
 // Fix users table to match Prisma schema
 const fixUsersTable = async () => {
   const connectionString = 'postgresql://postgres.ogohcxuwjtfpwnxejpey:mukul%40237lassi@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres';

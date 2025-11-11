@@ -182,16 +182,14 @@ router.get('/departments', async (req: Request, res: Response) => {
   try {
     console.log('Fetching department analytics...');
     
-    // Get all invoices for department distribution
-    const allInvoices = await prisma.invoice.findMany({
-      select: {
-        id: true,
-        totalAmount: true,
-        invoiceNumber: true
-      }
-    });
+    // Use raw SQL instead of Prisma due to schema mismatch
+    const allInvoices = await prisma.$queryRaw`
+      SELECT id, "invoiceId" as invoice_number, "totalAmount" as total_amount 
+      FROM invoices 
+      ORDER BY id
+    `;
 
-    console.log(`Found ${allInvoices.length} invoices for department analysis`);
+    console.log(`Found ${(allInvoices as any[]).length} invoices for department analysis`);
 
     // Create department mapping based on invoice distribution
     const departments: { name: string; invoices: any[] }[] = [
@@ -203,7 +201,7 @@ router.get('/departments', async (req: Request, res: Response) => {
     ];
 
     // Distribute invoices across departments
-    allInvoices.forEach((invoice: any, index: number) => {
+    (allInvoices as any[]).forEach((invoice: any, index: number) => {
       const deptIndex = index % departments.length;
       departments[deptIndex].invoices.push(invoice);
     });
@@ -211,7 +209,7 @@ router.get('/departments', async (req: Request, res: Response) => {
     // Calculate department analytics
     const departmentAnalytics = departments.map((dept: any) => {
       const totalSpend = dept.invoices.reduce((sum: number, inv: any) => 
-        sum + Number(inv.totalAmount), 0);
+        sum + Number(inv.total_amount), 0);
       const invoiceCount = dept.invoices.length;
       const avgInvoiceValue = invoiceCount > 0 ? totalSpend / invoiceCount : 0;
       const budgetAllocated = totalSpend * 1.3;
