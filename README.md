@@ -131,7 +131,7 @@ docker run -p 8000:8000 flowbit-ai-service
 - **Backend API**: `https://flowbit-ai.vercel.app/api`
 - **AI Service**: `https://your-service-name.onrender.com`
 
-## � Database Schema
+##  Database Schema
 
 ### Tables Structure
 
@@ -242,7 +242,7 @@ description (TEXT)
 - "What is the month-over-month growth in invoice volume?"
 - "Show me the median invoice amount by vendor category"
 
-## � Security & Performance
+##  Security & Performance
 
 ### Security Features
 - CORS configuration for Vercel domains
