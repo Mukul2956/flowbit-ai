@@ -1,11 +1,11 @@
 
   # FlowbitAI - Production-Ready Analytics Platform
 
-## 🚀 Overview
+##  Overview
 
 FlowbitAI is a full-stack web application featuring a "Chat with Data" interface powered by Groq LLM for natural language SQL query generation. The platform provides comprehensive invoice analytics with real-time dashboard visualization.
 
-## 🏗️ Project Structure
+##  Project Structure
 
 ```
 /FlowbitAI
@@ -22,7 +22,7 @@ FlowbitAI is a full-stack web application featuring a "Chat with Data" interface
 └── docs/                    # Documentation
 ```
 
-## 🔧 Quick Setup
+##  Quick Setup
 
 ### Prerequisites
 - Node.js 18+
@@ -98,7 +98,7 @@ python main.py
 # Runs on http://localhost:8000
 ```
 
-## 🚀 Deployment
+##  Deployment
 
 ### Frontend & Backend (Vercel)
 
@@ -161,7 +161,7 @@ status (VARCHAR)
 description (TEXT)
 ```
 
-## 🔌 API Documentation
+##  API Documentation
 
 ### Base URL
 - **Development**: `http://localhost:3001/api`
@@ -215,7 +215,7 @@ description (TEXT)
 }
 ```
 
-## 🤖 "Chat with Data" Workflow
+##  "Chat with Data" Workflow
 
 1. **User Input**: Natural language question via chat interface
 2. **Frontend Processing**: Validates input and sends to backend API
@@ -225,7 +225,7 @@ description (TEXT)
 6. **Result Processing**: Formats data for visualization
 7. **Frontend Display**: Updates charts and displays results
 
-## 🧪 Testing Queries
+##  Testing Queries
 
 ### Financial Analytics
 - "What is our total spending this year?"
@@ -256,7 +256,7 @@ description (TEXT)
 
 ---
 
-## � Quick Links
+##  Quick Links
 
 - **GitHub Repo**: https://github.com/yourusername/flowbit-ai
 - **Test Queries**: See TestQueries.txt for comprehensive testing examples
